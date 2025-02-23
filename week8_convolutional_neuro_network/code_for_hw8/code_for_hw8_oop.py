@@ -5,7 +5,7 @@
 # Recall that your implementation from homework 7 included the following classes:
     # Module, Linear, Tanh, ReLU, SoftMax, NLL and Sequential
 import numpy as np
-
+import math
 ######################################################################
 # OPTIONAL: Problem 2A) - Mini-batch GD
 ######################################################################
@@ -24,13 +24,18 @@ class Sequential:
         while num_updates < iters:
 
             np.random.shuffle(indices)
-            X = None  # Your code
-            Y = None  # Your code
+            X = X[:,indices]  # Your code
+            Y = Y[:,indices]  # Your code
 
-            for j in range(m.floor(N/K)):
+            for j in range(math.floor(N/K)):
                 if num_updates >= iters: break
 
                 # Implement the main part of mini_gd here
+                Ypred = self.forward(X[:, j*K:(j+1)*K])
+                loss = self.loss.forward(Ypred, Y[:, j*K:(j+1)*K])
+                err = self.loss.backward()
+                self.backward(err)
+                self.step(lrate)
                 # Your code
                 
                 num_updates += 1
