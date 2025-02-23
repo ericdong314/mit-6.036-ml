@@ -128,14 +128,14 @@ class BatchNorm(Module):
         self.A = A
         self.K = A.shape[1]
         
-        self.mus = None  # Your Code
-        self.vars = None  # Your Code
+        self.mus = np.mean(A, axis=1, keepdims=True)  # Your Code
+        self.vars = np.mean((A - self.mus)**2, axis=1, keepdims=True)  # Your Code
 
         # Normalize inputs using their mean and standard deviation
-        self.norm = None  # Your Code
+        self.norm = (A - self.mus) / (np.sqrt(self.vars) + self.eps)  # Your Code
             
         # Return scaled and shifted versions of self.norm
-        return None  # Your Code
+        return self.G * self.norm + self.B  # Your Code
 
     def backward(self, dLdZ):
         # Re-usable constants
@@ -152,8 +152,8 @@ class BatchNorm(Module):
         return dLdX
 
     def step(self, lrate):
-        self.B = None  # Your Code
-        self.G = None  # Your Code
+        self.B -= lrate*self.dLdB  # Your Code
+        self.G -= lrate*self.dLdG  # Your Code
         return
 
 
