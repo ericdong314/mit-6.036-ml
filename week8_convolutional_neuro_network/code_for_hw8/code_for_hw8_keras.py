@@ -11,10 +11,11 @@ import math as m
 from keras.models import Sequential
 from keras.optimizers import SGD, Adam
 from keras.layers import Conv1D, Conv2D, Dense, Dropout, Flatten, MaxPooling2D
-from keras.utils import np_utils
+import keras.utils as np_utils
 from keras.callbacks import Callback
 from keras.datasets import mnist
-from keras import backend as K
+# from keras import backend as K
+import tensorflow.python.keras.backend as K
 from keras.initializers import VarianceScaling
 from matplotlib import pyplot as plt
 
@@ -89,7 +90,7 @@ def run_keras(X_train, y_train, X_val, y_val, X_test, y_test, layers, epochs, sp
     for layer in layers:
         model.add(layer)
     # Define the optimization
-    model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=["accuracy"])
+    model.compile(loss='categorical_crossentropy', optimizer=Adam(), metrics=["acc"])
     N = X_train.shape[0]
     # Pick batch size
     batch = 32 if N > 1000 else 1     # batch size

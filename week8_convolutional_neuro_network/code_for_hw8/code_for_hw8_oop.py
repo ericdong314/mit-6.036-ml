@@ -4,8 +4,7 @@
 
 # Recall that your implementation from homework 7 included the following classes:
     # Module, Linear, Tanh, ReLU, SoftMax, NLL and Sequential
-import numpy as np
-import math
+
 ######################################################################
 # OPTIONAL: Problem 2A) - Mini-batch GD
 ######################################################################
@@ -24,18 +23,13 @@ class Sequential:
         while num_updates < iters:
 
             np.random.shuffle(indices)
-            X = X[:,indices]  # Your code
-            Y = Y[:,indices]  # Your code
+            X = None  # Your code
+            Y = None  # Your code
 
-            for j in range(math.floor(N/K)):
+            for j in range(m.floor(N/K)):
                 if num_updates >= iters: break
 
                 # Implement the main part of mini_gd here
-                Ypred = self.forward(X[:, j*K:(j+1)*K])
-                loss = self.loss.forward(Ypred, Y[:, j*K:(j+1)*K])
-                err = self.loss.backward()
-                self.backward(err)
-                self.step(lrate)
                 # Your code
                 
                 num_updates += 1
@@ -57,61 +51,6 @@ class Sequential:
 class Module:
     def step(self, lrate): pass  # For modules w/o weights
 
-class Linear(Module):
-    def __init__(self, m, n):
-        self.m, self.n = (m, n)  # (in size, out size)
-        self.W0 = np.zeros([self.n, 1])  # (n x 1)
-        self.W = np.random.normal(0, 1.0 * m ** (-.5), [m, n])  # (m x n)
-
-    def forward(self, A):
-        self.A = A  # (m x b)  Hint: make sure you understand what b stands for
-        return self.W.T @ self.A + self.W0   # Your code (n x b)
-
-    def backward(self, dLdZ):  # dLdZ is (n x b), uses stored self.A
-        self.dLdW = self.A @ dLdZ.T  # Your code
-        self.dLdW0 = dLdZ @ np.ones((dLdZ.shape[1], 1))  # Your code
-        return self.W @ dLdZ  # Your code: return dLdA (m x b)
-
-    def step(self, lrate):  # Gradient descent step
-        self.W = self.W - lrate * self.dLdW  # Your code
-        self.W0 = self.W0 - lrate * self.dLdW0  # Your code
-
-class Tanh(Module):  # Layer activation
-    def forward(self, Z):
-        self.A = np.tanh(Z)
-        return self.A
-
-    def backward(self, dLdA):  # Uses stored self.A
-        return dLdA * (1 - self.A ** 2)  # Your code: return dLdZ (?, b)
-
-class ReLU(Module):  # Layer activation
-    def forward(self, Z):
-        self.A = np.where(Z > 0, Z, 0)  # Your code: (?, b)
-        return self.A
-
-    def backward(self, dLdA):  # uses stored self.A
-        return dLdA * np.where(self.A != 0, 1, 0)  # Your code: return dLdZ (?, b)
-
-class SoftMax(Module):  # Output activation
-    def forward(self, Z):
-        return np.exp(Z) / np.sum(np.exp(Z), axis=0)  # Your code: (?, b)
-
-    def backward(self, dLdZ):  # Assume that dLdZ is passed in
-        return dLdZ
-
-    def class_fun(self, Ypred):  # Return class indices
-        return np.expand_dims(np.argmax(Ypred, axis=0),0)  # Your code: (1, b)
-
-class NLL(Module):  # Loss
-    def forward(self, Ypred, Y):
-        self.Ypred = Ypred
-        self.Y = Y
-        return np.sum(-np.sum(Y * np.log(Ypred), axis=0))  # Your code
-
-    def backward(self):  # Use stored self.Ypred, self.Y
-        return self.Ypred - self.Y  # Your code
-
-
 class BatchNorm(Module):    
     def __init__(self, m):
         np.random.seed(0)
@@ -128,14 +67,14 @@ class BatchNorm(Module):
         self.A = A
         self.K = A.shape[1]
         
-        self.mus = np.mean(A, axis=1, keepdims=True)  # Your Code
-        self.vars = np.mean((A - self.mus)**2, axis=1, keepdims=True)  # Your Code
+        self.mus = None  # Your Code
+        self.vars = None  # Your Code
 
         # Normalize inputs using their mean and standard deviation
-        self.norm = (A - self.mus) / (np.sqrt(self.vars) + self.eps)  # Your Code
+        self.norm = None  # Your Code
             
         # Return scaled and shifted versions of self.norm
-        return self.G * self.norm + self.B  # Your Code
+        return None  # Your Code
 
     def backward(self, dLdZ):
         # Re-usable constants
@@ -152,8 +91,8 @@ class BatchNorm(Module):
         return dLdX
 
     def step(self, lrate):
-        self.B -= lrate*self.dLdB  # Your Code
-        self.G -= lrate*self.dLdG  # Your Code
+        self.B = None  # Your Code
+        self.G = None  # Your Code
         return
 
 
