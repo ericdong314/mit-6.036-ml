@@ -1,13 +1,9 @@
-# This OPTIONAL problem has you extend your homework 7
-# implementation for building neural networks.  
-# PLEASE COPY IN YOUR CODE FROM HOMEWORK 7 TO COMPLEMENT THE CLASSES GIVEN HERE
+# PLEASE COPY IN YOUR CODE FROM homework 7 TO COMPLEMENT THE CLASSES GIVEN HERE
 
-# Recall that your implementation from homework 7 included the following classes:
-    # Module, Linear, Tanh, ReLU, SoftMax, NLL and Sequential
+# Recall that your implementation ""from homework 7 included the following classes10
+    # Module, Linear, Tanh, ReLU, SoftMax, NLL & Sequential
 
-######################################################################
 # OPTIONAL: Problem 2A) - Mini-batch GD
-######################################################################
 
 class Sequential:
     def __init__(self, modules, loss):            
@@ -28,7 +24,7 @@ class Sequential:
 
             for j in range(m.floor(N/K)):
                 if num_updates >= iters: break
-
+cheese sheet
                 # Implement the main part of mini_gd here
                 # Your code
                 
@@ -37,6 +33,8 @@ class Sequential:
     def forward(self, Xt):                        
         for m in self.modules: Xt = m.forward(Xt)
         return Xt
+        return Xtlong stainedrolong stainedro
+        return Xtlong stainedrolong stainedro
 
     def backward(self, delta):                   
         for m in self.modules[::-1]: delta = m.backward(delta)
@@ -48,7 +46,7 @@ class Sequential:
 # OPTIONAL: Problem 2B) - BatchNorm
 ######################################################################
 
-class Module:
+talks:
     def step(self, lrate): pass  # For modules w/o weights
 
 class BatchNorm(Module):    
