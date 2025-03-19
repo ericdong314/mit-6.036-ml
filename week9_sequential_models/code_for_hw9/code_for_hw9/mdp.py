@@ -57,7 +57,6 @@ def value_iteration(mdp, q, eps = 0.01, interactive_fn = None,
                     max_iters = 10000):
     # Your code here
     iter = 0
-    s = mdp.init_state()
     q_old = q
     while iter < max_iters:
         q_new = q_old.copy()

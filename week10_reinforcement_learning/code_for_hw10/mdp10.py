@@ -1,11 +1,11 @@
 import pdb
 import random
 import numpy as np
-from dist import uniform_dist, delta_dist, mixture_dist
+from dist import uniform_dist, delta_dist, mixture_dist, DDist
 from util import argmax_with_val, argmax
-from keras.models import Sequential
-from keras.layers.core import Dense
-from keras.optimizers import Adam
+from keras.api.layers import Dense
+from keras.api.models import Sequential
+from keras.api.optimizers import Adam
 
 class MDP:
     # Needs the following attributes:
@@ -67,27 +67,38 @@ class MDP:
 
 def value_iteration(mdp, q, eps = 0.01, max_iters = 1000):
     # Your code here (COPY FROM HW9)
-    raise NotImplementedError('value_iteration')
+    q_old = q
+    for iter in range(max_iters):
+        q_new = q_old.copy()
+        max_diff = 0
+        for s in mdp.states:
+            for a in mdp.actions:
+                q_new.set(s,a,mdp.reward_fn(s,a) + mdp.discount_factor * mdp.transition_model(s,a).expectation(lambda s: value(q_old,s)))
+                max_diff = max(max_diff, np.abs(q_new.get(s,a) - q_old.get(s,a)))
+        if max_diff < eps:
+            return q_new
+        q_old = q_new
+    return q_new
 
 # Given a state, return the value of that state, with respect to the
 # current definition of the q function
 def value(q, s):
     # Your code here (COPY FROM HW9)
-    raise NotImplementedError('value')
+    return max([q.get(s,a) for a in q.actions])
 
 # Given a state, return the action that is greedy with reespect to the
 # current definition of the q function
 def greedy(q, s):
     # Your code here (COPY FROM HW9)
-    raise NotImplementedError('greedy')
+    return argmax(q.actions, lambda a: q.get(s,a))
 
 def epsilon_greedy(q, s, eps = 0.5):
     if random.random() < eps:  # True with prob eps, random action
         # Your code here (COPY FROM HW9)
-        raise NotImplementedError('epsilon_greedy')
+        return uniform_dist(q.actions).draw()
     else:
         # Your code here (COPY FROM HW9)
-        raise NotImplementedError('epsilon_greedy')
+        return greedy(q,s)
 
 class TabularQ:
     def __init__(self, states, actions):
@@ -104,15 +115,21 @@ class TabularQ:
         return self.q[(s,a)]
     def update(self, data, lr):
         # Your code here
-        raise NotImplementedError('TabularQ.update')
+        for s, a, t in data:
+            self.set(s, a, (1-lr)*self.get(s,a) + lr*t)
 
 def Q_learn(mdp, q, lr=.1, iters=100, eps = 0.5, interactive_fn=None):
     # Your code here
-    raise NotImplementedError('Q_learn')
+    s = mdp.init_state()
     for i in range(iters):
+        a = epsilon_greedy(q,s,eps)
+        r,s_prime = mdp.sim_transition(s,a)
+        gamma = 0 if mdp.terminal(s) else mdp.discount_factor
+        q.update([(s,a,r+gamma*value(q,s_prime))], lr)
+        s=s_prime
         # include this line in the iteration, where i is the iteration number
         if interactive_fn: interactive_fn(q, i)
-    pass
+    return q
 
 # Simulate an episode (sequence of transitions) of at most
 # episode_length, using policy function to select actions.  If we find
@@ -186,15 +203,42 @@ def evaluate(mdp, n_episodes, episode_length, policy):
         # print('    ', r, len(e))
     return score/n_episodes, length/n_episodes
 
+# def Q_learn_batch(mdp, q, lr=.1, iters=100, eps=0.5,
+#                   episode_length=10, n_episodes=2,
+#                   interactive_fn=None):
+#     # Your code here
+#     all_experiences = []
+#     for i in range(iters):
+#         for e in range(n_episodes):
+#             _, episode, _ = sim_episode(mdp,episode_length,lambda s:epsilon_greedy(q,s,eps), draw=False)
+#             all_experiences += episode
+#         all_q_targets = []
+#         for s,a,r,s_prime in all_experiences:
+#             if s_prime is not None:
+#                 all_q_targets.append((s,a,r+mdp.discount_factor*value(q,s_prime)))
+#             else:
+#                 all_q_targets.append((s,a,r))
+#         q.update(all_q_targets, lr)
+#         # include this line in the iteration, where i is the iteration number
+#         if interactive_fn: interactive_fn(q, i)
+#     return q
 def Q_learn_batch(mdp, q, lr=.1, iters=100, eps=0.5,
-                  episode_length=10, n_episodes=2,
+                               episode_length=10, n_episodes=2,
                   interactive_fn=None):
-    # Your code here
-    raise NotImplementedError('Q_learn_batch')
+    all_experiences = []
+    explore = lambda s: epsilon_greedy(q,s,eps)
     for i in range(iters):
-        # include this line in the iteration, where i is the iteration number
+        for e in range(n_episodes):
+            _, episode, _ = sim_episode(mdp, episode_length, explore)
+            all_experiences += episode
+        all_q_targets = []
+        for (s, a, r, s_prime) in all_experiences:
+            future_val = 0 if s_prime is None else value(q, s_prime)
+            all_q_targets.append((s, a, (r + mdp.discount_factor * future_val)))
+        q.update(all_q_targets, lr)
         if interactive_fn: interactive_fn(q, i)
-    pass
+    return q
+
 
 def make_nn(state_dim, num_hidden_layers, num_units):
     model = Sequential()
@@ -211,11 +255,17 @@ class NNQ:
         self.states = states
         self.state2vec = state2vec
         self.epochs = epochs
-        self.models = None              # Your code here
-        if self.models is None: raise NotImplementedError('NNQ.models')
+        # Your code here
+        state_dim = state2vec(states[0]).shape[1]
+        self.models = {a:make_nn(state_dim, num_layers, num_units) for a in actions}
     def get(self, s, a):
         # Your code here
-        raise NotImplementedError('NNQ.get')
+        return self.models[a].predict(self.state2vec(s)).item()
     def update(self, data, lr):
         # Your code here
-        raise NotImplementedError('NNQ.update')
+        actions = set([a for s,a,t in data])
+        for action in actions:
+            model = self.models[action]
+            x = np.row_stack([self.state2vec(s) for s,a,t in data if a == action])
+            y = np.row_stack([t for s,a,t in data if a == action])
+            model.fit(x, y, epochs=self.epochs, verbose=False)
